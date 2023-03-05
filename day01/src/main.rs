@@ -16,7 +16,7 @@ fn part1(input: &str) -> String {
         .split("\n\n")
         .map(|food| {
             food
-                .split("\n")
+                .split('\n')
                 .map(|c| c.parse::<u32>().unwrap_or(0))
                 .sum::<u32>()
         })
