@@ -12,18 +12,15 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-
 fn part1(input: &str) -> String {
     let sum = input
         .lines()
         .map(|line| {
-            let a = line[0..(line.len()/2)].chars().collect::<HashSet<_>>();
-            let b = line[(line.len()/2)..].chars().collect::<HashSet<_>>();
+            let a = line[0..(line.len() / 2)].chars().collect::<HashSet<_>>();
+            let b = line[(line.len() / 2)..].chars().collect::<HashSet<_>>();
             (a, b)
         })
-        .map(|(a, b)| {
-            a.intersection(&b).collect::<String>()
-        })
+        .map(|(a, b)| a.intersection(&b).collect::<String>())
         .map(|s| {
             let c = s.as_bytes()[0] as u32;
             match c {
