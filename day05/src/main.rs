@@ -1,16 +1,16 @@
-use std::{env, fs, io, path::Path};
 use std::collections::VecDeque;
 use std::convert::TryFrom;
 use std::num::ParseIntError;
+use std::{env, fs, io, path::Path};
 
-use nom::IResult;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete;
 use nom::character::complete::{anychar, digit1, line_ending, not_line_ending, space1};
 use nom::combinator::{eof, opt};
-use nom::multi::{count, many1, separated_list0, separated_list1};
+use nom::multi::{count, many1, separated_list1};
 use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::IResult;
 
 fn main() -> io::Result<()> {
     let mut dir = env::current_exe()?;
@@ -34,7 +34,11 @@ impl TryFrom<(&str, &str, &str)> for Instruction {
     type Error = ParseIntError;
 
     fn try_from(input: (&str, &str, &str)) -> Result<Self, Self::Error> {
-        Ok(Instruction { num: input.0.parse()?, source: input.1.parse::<usize>()? - 1, destination: input.2.parse::<usize>()? - 1 })
+        Ok(Instruction {
+            num: input.0.parse()?,
+            source: input.1.parse::<usize>()? - 1,
+            destination: input.2.parse::<usize>()? - 1,
+        })
     }
 }
 
@@ -69,7 +73,12 @@ fn parse_crates(input: &str) -> IResult<&str, Vec<char>> {
 fn parse_crate(input: &str) -> IResult<&str, char> {
     Ok(alt((
         delimited(complete::char('['), anychar, complete::char(']')),
-        delimited(complete::char(' '), complete::char(' '), complete::char(' '))))(input)?)
+        delimited(
+            complete::char(' '),
+            complete::char(' '),
+            complete::char(' '),
+        ),
+    ))(input)?)
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
@@ -77,7 +86,10 @@ fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
     let (input, source) = preceded(tuple((space1, tag("from"), space1)), digit1)(input)?;
     let (input, destination) = preceded(tuple((space1, tag("to"), space1)), digit1)(input)?;
     let (input, _) = opt(line_ending)(input)?;
-    Ok((input, Instruction::try_from((num, source, destination)).unwrap()))
+    Ok((
+        input,
+        Instruction::try_from((num, source, destination)).unwrap(),
+    ))
 }
 
 fn part1(input: &str) -> String {
@@ -90,7 +102,8 @@ fn part1(input: &str) -> String {
         }
     }
 
-    crates.into_iter()
+    crates
+        .into_iter()
         .map(|mut c| c.pop_back().unwrap_or(' '))
         .collect::<String>()
 }
@@ -104,7 +117,8 @@ fn part2(input: &str) -> String {
         crates[instruction.destination].append(&mut c);
     }
 
-    crates.into_iter()
+    crates
+        .into_iter()
         .map(|mut c| c.pop_back().unwrap_or(' '))
         .collect::<String>()
 }
