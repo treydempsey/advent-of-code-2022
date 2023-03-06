@@ -71,14 +71,14 @@ fn parse_crates(input: &str) -> IResult<&str, Vec<char>> {
 }
 
 fn parse_crate(input: &str) -> IResult<&str, char> {
-    Ok(alt((
+    alt((
         delimited(complete::char('['), anychar, complete::char(']')),
         delimited(
             complete::char(' '),
             complete::char(' '),
             complete::char(' '),
         ),
-    ))(input)?)
+    ))(input)
 }
 
 fn parse_instruction(input: &str) -> IResult<&str, Instruction> {
