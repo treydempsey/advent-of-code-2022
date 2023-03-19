@@ -26,7 +26,7 @@ fn main() -> Result<(), io::Error> {
 
 fn line(input: &str) -> IResult<&str, Vec<u8>> {
     let (input, (row, _)) = tuple((digit1, opt(newline)))(input)?;
-    let chars = row.chars().flat_map(|c| c.to_digit(10).map(|d| u8::try_from(d).ok()).flatten()).collect();
+    let chars = row.chars().flat_map(|c| c.to_digit(10).and_then(|d| u8::try_from(d).ok())).collect();
     Ok((input, chars))
 }
 
