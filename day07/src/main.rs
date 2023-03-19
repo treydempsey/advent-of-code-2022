@@ -92,7 +92,7 @@ fn build_filesystem(input: &str) -> HashMap<String, Vec<Filesystem>> {
                 }
             }
             Statement::List => {
-                let path = path_join_vec(&cwd);
+                let path = path_join_vec(cwd.clone());
                 match filesystem.get_mut(&path) {
                     Some(_) => panic!("Directory before list"),
                     None => {
@@ -102,7 +102,7 @@ fn build_filesystem(input: &str) -> HashMap<String, Vec<Filesystem>> {
             }
             Statement::Directory(..) | Statement::File(..) => {
                 let entry = statement.into();
-                let path = path_join_vec(&cwd);
+                let path = path_join_vec(cwd.clone());
                 match filesystem.get_mut(&path) {
                     Some(entries) => entries.push(entry),
                     None => panic!("Directory entry before ."),
@@ -124,22 +124,22 @@ fn calculate_size(filesystem: &mut HashMap<String, Vec<Filesystem>>) {
             visited.insert(cwd.clone());
             if let Some(entries) = filesystem.get(&cwd) {
                 let children = entries
-                    .into_iter()
+                    .iter()
                     .flat_map(|e| match e {
                         Filesystem::Directory(_, dir) if dir != &"." => {
-                            Some(path_join_vec(&vec![&cwd, dir]))
+                            Some(path_join_vec(vec![&cwd, dir]))
                         }
                         _ => None,
                     })
                     .filter(|d| visited.get(d).is_none())
                     .collect::<Vec<String>>();
 
-                if children.len() > 0 {
+                if !children.is_empty() {
                     dir_stack.push(cwd);
                     dir_stack.extend(children);
                 } else {
                     let size: usize = entries
-                        .into_iter()
+                        .iter()
                         .flat_map(|e| match e {
                             Filesystem::File(s, _) => Some(s),
                             Filesystem::Directory(Some(s), dir) if dir != &"." => Some(s),
@@ -148,7 +148,7 @@ fn calculate_size(filesystem: &mut HashMap<String, Vec<Filesystem>>) {
                         .sum();
 
                     if let Some(entries) = filesystem.get_mut(&cwd) {
-                        entries.into_iter().for_each(|e| match e {
+                        entries.iter_mut().for_each(|e| match e {
                             Filesystem::Directory(s, name) if name == &"." => *s = Some(size),
                             _ => (),
                         });
@@ -156,7 +156,7 @@ fn calculate_size(filesystem: &mut HashMap<String, Vec<Filesystem>>) {
 
                     let (b, d) = path_split(&cwd);
                     if let Some(entries) = filesystem.get_mut(b) {
-                        entries.into_iter().for_each(|e| match e {
+                        entries.iter_mut().for_each(|e| match e {
                             Filesystem::Directory(s, name) if name == &d => *s = Some(size),
                             _ => (),
                         });
@@ -190,11 +190,8 @@ fn part2(input: &str) -> String {
 
     let total_size = if let Some(entries) = filesystem.get("/") {
         entries
-            .into_iter()
-            .find(|e| match e {
-                Filesystem::Directory(Some(_), dir) if dir == &"." => true,
-                _ => false,
-            })
+            .iter()
+            .find(|e| matches!(e, Filesystem::Directory(Some(_), dir) if dir == &"."))
             .map(|f| match f {
                 Filesystem::Directory(Some(sz), _) => *sz,
                 _ => 0,
@@ -210,13 +207,13 @@ fn part2(input: &str) -> String {
 
     let mut dir_stack: Vec<String> = Vec::new();
     dir_stack.push("/".into());
-    while dir_stack.len() > 0 {
+    while !dir_stack.is_empty() {
         let cwd = dir_stack.pop();
         if let Some(cwd) = cwd {
             // Check the current directory first
             let (b, d) = path_split(&cwd);
             if let Some(entries) = filesystem.get_mut(b) {
-                entries.into_iter().for_each(|e| match e {
+                entries.iter_mut().for_each(|e| match e {
                     Filesystem::Directory(Some(s), name) if name == &d => {
                         if *s >= needle && *s < target_size {
                             target = Some(cwd.clone());
@@ -230,16 +227,16 @@ fn part2(input: &str) -> String {
             // Handle child directories
             if let Some(entries) = filesystem.get(&cwd) {
                 let children = entries
-                    .into_iter()
+                    .iter()
                     .flat_map(|e| match e {
-                        Filesystem::Directory(_, dir) if dir != &"." => {
-                            Some(path_join_vec(vec![cwd, *dir]))
+                        Filesystem::Directory(_, dir) if *dir != "." => {
+                            Some(path_join_vec(vec![&cwd, dir]))
                         }
                         _ => None,
                     })
                     .collect::<Vec<String>>();
 
-                if children.len() > 0 {
+                if !children.is_empty() {
                     dir_stack.extend(children);
                 }
             }
@@ -250,7 +247,7 @@ fn part2(input: &str) -> String {
 }
 
 fn path_split(path: &str) -> (&str, &str) {
-    if path == "" || path == "/" {
+    if path.is_empty() || path == "/" {
         ("/", "")
     } else {
         let p = std::path::Path::new(path);
@@ -264,7 +261,7 @@ fn path_split(path: &str) -> (&str, &str) {
     }
 }
 
-fn path_join_vec(v: &[&str]) -> String {
+fn path_join_vec(v: Vec<&str>) -> String {
     let mut p = std::path::PathBuf::new();
     v.iter().for_each(|c| p.push(c));
     p.as_os_str().to_str().unwrap_or("").to_string()
